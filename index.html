@@ -36,7 +36,7 @@
         var x = this.el.querySelectorAll('.slide'+(counter-1));
         for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', false);  }
 
-        document.querySelector('#camera').emit('slide'+counter);
+        document.querySelector('#avatar').emit('slide'+counter);
         document.querySelector('#titletext').emit('slide'+counter);
         document.querySelector('#board').emit('slide'+counter);
           
@@ -62,7 +62,7 @@
       var x = this.el.querySelectorAll('.slide'+(counter+1));
       for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', false);  }
 
-      document.querySelector('#camera').emit('slide'+counter);
+      document.querySelector('#avatar').emit('slide'+counter);
       document.querySelector('#titletext').emit('slide'+counter);
       document.querySelector('#board').emit('slide'+counter);
    
@@ -104,14 +104,8 @@
       <a-asset-item id="self" src="https://ucarecdn.com/fbcb4698-a381-4c48-a1cd-b738d0fee1be/"></a-asset-item>
     </a-assets>
 
-    <a-entity position="0 1.8 4" camera id="camera"
-            keyboard-controls="enabled: false" look-controls="enabled: true">
-        <!-- https://github.com/donmccurdy/aframe-keyboard-controls -->
-  
+    <a-entity position="0 1.8 4" id="avatar" mixin="avatar-head"               camera look-controls wasd-controls               firebase-broadcast="components: mixin, position, rotation"               position="0 1.8 5">     
       <a-cursor color="white"></a-cursor>
-     <a-entity id="avatar" mixin="avatar-head"               camera look-controls wasd-controls               firebase-broadcast="components: mixin, position, rotation"               position="0 1.8 5">     
-</a-entity>   
-
       <a-animation attribute="position"
                begin="slide10"
                to="0 1.8 4"
