@@ -1,25 +1,361 @@
- 
-<head>   
-<title>My A-Frame Scene
-</title>   
-<script src="https://aframe.io/releases/0.2.0/aframe.min.js">
-</script>   
-<script src="https://rawgit.com/ngokevin/aframe-firebase-component/master/dist/aframe-firebase-component.min.js">
-</script> 
-</head>  
-<body>   
-<a-scene firebase="
+<!doctype html>
+<html>
+  <!-- Live demo and live coding for http://fabien.benetou.fr/Events/JavascriptLabBrusselsMarch2016  -->     
+  <head>
+    <title>webVR using A-frame for CampusPartNL by @Utopiah</title>
+    <script src="https://rawgit.com/aframevr/aframe/master/dist/aframe-v0.2.0.min.js"></script>
+    <script src="https://rawgit.com/ngokevin/aframe-text-component/master/dist/aframe-text-component.min.js"></script>
+    <script src="https://rawgit.com/donmccurdy/aframe-keyboard-controls/master/dist/aframe-keyboard-controls.min.js"></script>   
+    <script src="https://rawgit.com/ngokevin/aframe-firebase-component/master/dist/aframe-firebase-component.min.js">
+    <script> 
+     AFRAME.registerShader('test', {
+        schema: { 'redness': { type: "number", default: 0.5, max: 1, min: 0, is: 'uniform' } },
+        fragmentShader:
+          'uniform float redness; ' +
+          'void main() { ' +
+            'gl_FragColor = vec4(redness,0.0,0.0,1.0); ' +
+          '}',
+      });
+      // reminder of Sakri's presentation, ideally directly use his own shader
+      // see https://aframe.io/aframe/examples/test-shaders/
+      // doc https://aframe.io/docs/core/shaders.html
+      // alternative for more complex shader https://raw.githubusercontent.com/aframevr/aframe/50a07cac9cd2f764b9ff4cd0a5bb20e408f8f4d6/examples/test-shaders/shaders/noise.js
+
+      var counter=1;
+      var totalslide=10;
+      
+      AFRAME.registerComponent('SlideRightKeyForward', {
+      init: function () {    
+    
+        this.el.addEventListener('keydown:ArrowRight', function () {
+        counter++;
+        this.el.querySelector('#counter').setAttribute('text', 'text: (slide '+counter+'/'+totalslide+')');
+        var x = this.el.querySelectorAll('.slide'+counter);
+        for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', true);  }
+        // show the current slide, hide the previous one
+        var x = this.el.querySelectorAll('.slide'+(counter-1));
+        for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', false);  }
+
+        document.querySelector('#camera').emit('slide'+counter);
+        document.querySelector('#titletext').emit('slide'+counter);
+        document.querySelector('#board').emit('slide'+counter);
+          
+        }.bind(this));
+      },
+        update: function () {
+        }, 
+        tick: function () {
+        },
+        remove: function () {},
+      })
+
+    
+      AFRAME.registerComponent('SlideLeftKeyBackward', {
+        // important if a slide is missed, can happen due to lag
+  init: function () {    
+    this.el.addEventListener('keydown:ArrowLeft', function () {
+      counter--;
+      this.el.querySelector('#counter').setAttribute('text', 'text: (slide '+counter+'/'+totalslide+')');
+      var x = this.el.querySelectorAll('.slide'+counter);
+      for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', true);  }
+      // show the current slide, hide the next one
+      var x = this.el.querySelectorAll('.slide'+(counter+1));
+      for(var index=0; index < x.length; index++ ) { x[index].setAttribute('visible', false);  }
+
+      document.querySelector('#camera').emit('slide'+counter);
+      document.querySelector('#titletext').emit('slide'+counter);
+      document.querySelector('#board').emit('slide'+counter);
+   
+      }.bind(this));
+      },
+      update: function () {;
+      }, 
+      tick: function () {
+      },
+      remove: function () {},
+    })
+  
+      </script>
+  </head>
+  <body>
+    <a-scene id="slideScene" SlideRightKeyForward="" SlideLeftKeyBackward=""  firebase="
     apiKey: AIzaSyCibvUaPVvEG5IEyEFAvXPweweGkpaZTE4;
     authDomain: aframediscovery.firebaseapp.com;
     databaseURL: https://aframediscovery.firebaseio.com;
-    storageBucket: aframediscovery.appspot.com">     
-<a-assets>       
-<!-- Using mixins to decrease amount of data send over the wire. -->       
-<a-mixin id="avatar-head"               geometry="primitive: box; depth: 0.3; height: 0.3; width: 0.3"               material="color: #222">
-</a-mixin>     
-</a-assets>      
-<a-entity id="avatar" mixin="avatar-head"               camera look-controls wasd-controls               firebase-broadcast="components: mixin, position, rotation"               position="0 1.8 5">     
-</a-entity>   
-</a-scene> 
-</body>
+    storageBucket: aframediscovery.appspot.com">
+    <!-- cf https://developer.mozilla.org/en-US/docs/Web/Web_Components/Custom_Elements -->
+      
+    <a-assets>
+      <!-- cf also https://aframe.io/docs/core/asset-management-system.html -->
+      <a-mixin id="smalltitle" position="-2 2.5 1" material="color: black" scale="0.2 0.2 0.2"></a-mixin>
+      <a-mixin id="textcontent" position="-1 2 1" material="color: black" scale="0.2 0.2 0.2"></a-mixin>
+        <!-- cf https://aframe.io/docs/core/mixin.html -->       
+        <!-- Using mixins to decrease amount of data send over the wire. -->       
+      <a-mixin id="avatar-head"               geometry="primitive: box; depth: 0.3; height: 0.3; width: 0.3"               material="color: #222">
+</a-mixin>
+      
+             
+      <a-asset-item id="mountain-mtl" src="https://ucarecdn.com/22282159-c9fe-4f1a-a23b-aadff999a4df/"></a-asset-item>
+      <a-asset-item id="mountain-obj" src="https://ucarecdn.com/ca4a2cd8-ae99-4a59-86a2-1895836bbfe9/"></a-asset-item>
+      
+      <a-asset-item id="tree-mtl" src="https://ucarecdn.com/5ca714c3-6ce5-471e-87b5-a57e8ef9bd26/"></a-asset-item>
+      <a-asset-item id="tree-obj" src="https://ucarecdn.com/d22245e0-5b7e-4e4f-84c4-a673b7b8e75c/"></a-asset-item>
+      
+      <a-asset-item id="self" src="https://ucarecdn.com/fbcb4698-a381-4c48-a1cd-b738d0fee1be/"></a-asset-item>
+    </a-assets>
 
+    <a-entity position="0 1.8 4" camera id="camera"
+            keyboard-controls="enabled: false" look-controls="enabled: true">
+        <!-- https://github.com/donmccurdy/aframe-keyboard-controls -->
+  
+      <a-cursor color="white"></a-cursor>
+     <a-entity id="avatar" mixin="avatar-head"               camera look-controls wasd-controls               firebase-broadcast="components: mixin, position, rotation"               position="0 1.8 5">     
+</a-entity>   
+
+      <a-animation attribute="position"
+               begin="slide10"
+               to="0 1.8 4"
+               dur="1000"
+               fill="forwards"></a-animation>
+      <a-animation attribute="position"
+               begin="slide11"
+               to="4 4 5"
+               dur="1000"
+               fill="forwards"></a-animation>
+      <!-- reminder of Sakri's presentation, easing vs physics -->
+  </a-entity>
+    <a-entity position="0 -5 20" scale="1 1 1" rotation="0 180 0">
+      <a-sky color="#05c5de"></a-sky>
+
+      <a-plane color="#CCC" height="80" width="80" rotation="-90 0 0" position="0 1 0"></a-plane>
+      
+      <a-obj-model position="0 0 1" src="#self-obj" mtl="#self-mtl"></a-obj-model>
+      
+      <a-obj-model position="0 3 -10" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="12 3.8 -1" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="17 3.8 -1" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="16.5 3.8 1" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="17.5 4 3" src="#tree-obj" color="green"></a-obj-model>
+      
+      <a-obj-model position="-17 2.4 -1" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="-16.5 2 1" src="#tree-obj" color="green"></a-obj-model>
+      <a-obj-model position="-17.5 3 3" src="#tree-obj" color="green"></a-obj-model>
+      
+      <a-collada-model rotation="0 160 0" position="-13 2.4 8"  scale="0.5 0.5 0.5" src="#self">
+        <a-animation attribute="rotation"
+               dur="20000"
+               fill="forwards"
+               to="0 360 0"
+               repeat="indefinite"></a-animation>
+        <a-event name="mouseenter" scale="3 3 3"></a-event>
+        <a-event name="mouseleave" scale="0.5 0.5 0.5"></a-event>
+      </a-collada-model>
+      
+      <a-obj-model  position="0 -1 0" scale="10 10 10" src="#mountain-obj" mtl="#mountain-mtl"></a-obj-model>
+    </a-entity>
+      
+  <a-plane id="board" rotation="0 0 0" width="20" height="10" color="white" position="0 1 0">
+      <a-animation attribute="position"
+               begin="slide10"
+               to="0 1 0"
+               dur="5000"
+               fill="forwards"></a-animation>
+      <a-animation attribute="position"
+               begin="slide11"
+               to="0 -15 0"
+               dur="5000"
+               fill="forwards"></a-animation>
+      </a-plane>
+  <a-entity id="counter" scale="0.2 0.2 0.2" text="text: (Slide 1/10)" position="2 0 1" material="color: black"></a-entity>
+      
+      <!-- those will become buttons equivalent for the VR mode demo experience, consider tap instead -->
+      <a-cone id="LookLeft" position="-1 -2 3" radius-bottom="1" radius-top="0.1" color="black" rotation="90 -90 0">
+        <a-event name="mouseenter" scale="1.5 1.5 1.5" color="red"></a-event>
+        <a-event name="mouseleave" scale="1 1 1" color="black"></a-event>
+      </a-cone>
+      <a-cone id="LookRight" position="1 -2 3" radius-bottom="1" radius-top="0.1" color="black" rotation="90 90 0">
+        <a-event name="mouseenter" scale="1.5 1.5 1.5" color="red"></a-event>
+        <a-event name="mouseleave" scale="1 1 1" color="black"></a-event>
+      </a-cone>
+
+        <!-- cf https://aframe.io/faq/#How-do-I-display-text-in-A-Frame -->
+      <a-entity id="titletext" text="text: webVR & 3D" position="-2.5 3 0" material="color: black">
+      <a-animation attribute="position"
+               begin="slide10"
+               to="-2 3 1"
+               dur="5000"
+               fill="forwards"></a-animation>
+      <a-animation attribute="rotation"
+               begin="slide10"
+               to="0 0 0"
+               dur="5000"
+               fill="forwards"></a-animation>
+      <a-animation attribute="rotation"
+               begin="slide11"
+               to="0 90 0"
+               dur="5000"
+               fill="forwards"></a-animation>
+      <a-animation attribute="position"
+               begin="slide11"
+               to="-2 3 7"
+               dur="5000"
+               fill="forwards"></a-animation>
+      </a-entity>
+     
+      <a-image class="slide1" visible="true" src="https://ucarecdn.com/7851302c-64cd-41a2-9741-c5d752b65378/campuscover.png" crossorigin="" width="6" height="3" position="0 1.3 0.1">
+      </a-image>
+      
+    <a-entity class="slide2" visible="false">
+      <a-entity mixin="smalltitle" text="text: who am I (cf my quick history with VR), credentials as an expert"></a-entity>
+      <a-image src="https://ucarecdn.com/a4953b91-6b08-4cf9-a9fa-c70fd00c4401/" crossorigin="" position="-2 2 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/8d129366-0308-4baa-9da0-2ac1131e2b66/" crossorigin="" position="-2 1 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/246459c2-d661-468f-9434-bb9e801bc111/" crossorigin="" position="-1 2 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/bc9a9aba-81aa-425b-b659-35a37cced164/" crossorigin="" position="-1 1 0.1"></a-image>
+      
+      <a-image src="https://ucarecdn.com/27d6872f-d618-452e-9754-baa03c4698cf/" crossorigin="" position="1.4 2 0.3" width="2"></a-image>
+      <a-image src="https://ucarecdn.com/5d9d2638-5c9a-4070-8755-4ae118c96ac6/" crossorigin="" position="2 1 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/2a12e7a4-b099-4756-8f38-7f545ed9d086/" crossorigin="" position="2 1 0.2"scale="0.8 0.5 1"></a-image>
+      <a-image src="https://ucarecdn.com/e24597d5-8f93-4db6-9f03-e7891ab66812/" crossorigin="" position="-2 0 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/e6f76995-9b51-404a-ab21-ed07d7152cd2/" crossorigin="" position="2 0 0.1"></a-image>
+    </a-entity>
+    <a-entity class="slide3" visible="false">
+      <a-entity mixin="smalltitle" text="text: the current state of VR"></a-entity>
+      <a-image src="https://ucarecdn.com/a9a08ae0-47a6-4dae-97cb-4db3aefb47e2/" crossorigin="" position="-2 2 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/38649377-ab49-479e-82bd-f662cb34c1d3/" crossorigin="" position="-2 1 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/ceb82633-21ea-4f65-9b5e-ceb4ba8ba385/" crossorigin="" position="-1 2 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/63830dac-5420-45be-bec3-fea8477badaa/" crossorigin="" position="2 2 0.1"></a-image>
+      
+      <a-image src="https://ucarecdn.com/c057a714-dccc-4ba3-9e4c-5721199162f3/" crossorigin="" position="-2 0 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/c9c9d22f-c8ce-4e67-aa9f-537aba5701ba/" crossorigin="" position="0 0 0.1" width="2"></a-image>
+      <a-image src="https://ucarecdn.com/84de35d8-b78d-4e50-a359-fc851724b6ae/" crossorigin="" position="2 0 0.1" width="2"></a-image>
+      <a-image src="https://ucarecdn.com/b6440e7b-b2f9-43f1-85a8-d86dffd0f8d7/" crossorigin="" position="1 1 0.1" width="1.5"></a-image>
+    </a-entity>
+    <a-entity class="slide4" visible="false">
+      <a-entity mixin="smalltitle" text="text: the current state of webVR"></a-entity>
+      <a-image src="https://ucarecdn.com/1c7ba2df-e79e-4ba5-acd6-6e87e6032a6c/"  position="-1 1.5 0.1" crossorigin="" width="2" height="2"></a-image>
+            <!-- webVR 1.0 with logo of Chrome, Firefox (greyed out Safari and Edge, screenshot of CanIUse... equivalent by MozVR) -->
+      <a-image src="https://ucarecdn.com/5a4aa89c-0f1c-4b29-8150-f64d4931c9d4/"  position="1 1.5 0.1" crossorigin="" width="2" height="2"></a-image> 
+            <!-- Recent Vive support -->
+      <a-image src="https://ucarecdn.com/dfdeaf7b-d318-40af-92c3-5c7a8ab48efc/"  position="0 -0.5 0.1" crossorigin="" width="2" height="2"></a-image>
+    </a-entity>
+    <a-entity class="slide5" visible="false">
+      <a-entity mixin="smalltitle" text="text: A-frame vs the rest"></a-entity>
+            <!-- Logos of key platforms  -->
+      <a-image src="https://ucarecdn.com/948eba16-764b-481b-9e5c-25135b68c69f/" position="-2 2 0.1" crossorigin="" width="1" height="0.5"></a-image>
+      <a-image src="https://ucarecdn.com/18e4b173-a26b-4613-b3a2-e6977ca682c7/" position="-2 1 0.1" crossorigin="" width="1" height="0.7"></a-image>
+      <a-image src="https://ucarecdn.com/816d4257-924c-4799-bad3-dc7930d56319/" position="-2 0 0.1" crossorigin="" width="1" height="1"></a-image>
+      <a-image src="https://ucarecdn.com/1c260ac6-c93c-4d38-9674-04aba6f3ac46/" position="-2 -1 0.1" crossorigin="" width="1" height="1"></a-image>
+      <a-image src="https://ucarecdn.com/8fcd8537-661c-4e0d-a5b0-18a5dd308271/" position="-1 2 0.1" crossorigin="" width="1" height="1"></a-image>
+      <a-image src="https://ucarecdn.com/9f1c05ea-923e-4e71-a71a-08946cd929e7/" position="-1 1 0.1" crossorigin="" width="1" height="1"></a-image>
+      <a-image src="https://ucarecdn.com/285559dc-4578-4af0-8f86-5ddb145b9e5f/" position="-1 0 0.1" crossorigin="" width="1" height="1"></a-image>
+      
+      <a-image src="https://ucarecdn.com/ab9f933f-0912-49f0-a3f3-1c095197379a/" position="1 1 0.1" crossorigin="" width="3" height="3"></a-image>
+    </a-entity>
+    <a-entity class="slide6" visible="false">
+      <a-entity mixin="smalltitle" text="text: A-frame"></a-entity>
+      <a-image src="https://ucarecdn.com/b7e1fb51-ac3b-415a-9dbe-733122ff0bcb/" crossorigin="" width="6" height="3" position="-1 1 0.1"></a-image>
+      <a-image src="https://ucarecdn.com/61cfab64-ecd8-4567-a667-8f4c43af2f44/"  position="2 0 0.2" crossorigin=""></a-image>
+            <!-- http://vrlab-brussels.info/wiki/ThirdWorkshopQuest/Mission0  -->
+    </a-entity>
+    <a-entity class="slide7" visible="false">
+      <a-entity mixin="smalltitle" text="text: beyond A-frame"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Fullstack w/ Meteor for proper app interaction" position="-1 2 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: NodeJS for webSockets... or everything else!" position="-1 1.5 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: React, Python, etc for... whatever you can imagine" position="-1 1 1"></a-entity>
+      <a-image src="https://ucarecdn.com/92e3721f-e7a1-4b26-9c46-a10840486b60/" position="-1.5 2 1" crossorigin="" width="0.5" height="0.5"></a-image>
+      <a-image src="https://ucarecdn.com/38559799-7304-467d-9b6c-386329877bee/" position="-1.5 1.5 1" crossorigin="" width="0.5" height="0.5"></a-image> 
+      <a-image src="https://ucarecdn.com/6ddf9aee-07f3-47db-8b76-ee64a21a4765/" position="-1.5 1 1" crossorigin="" width="0.5" height="0.5"></a-image> 
+      <a-entity mixin="smalltitle" text="text: Stack?" position="-2.5 -0.3 1" scale="0.5 0.5 0.5">
+      <a-animation attribute="rotation"
+               to="0 360 0"
+               dur="20000" 
+               repeat="indefinite"></a-animation>
+      </a-entity>
+      <a-entity position="-5 -1 6.5" rotation="0 90 0">
+            <a-entity mixin="smalltitle" text="text: Content" position="-2.5 -0.3 0.1" scale="0.5 0.5 0.5"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Aframe (ECS DOM 3D)" position="-0.5 -1.0 0.1" scale="0.5 0.5 0.5"></a-entity>
+            <a-box position="-2 -1.0 0.1" width="1" height="1" color="#FF2233"></a-box>
+            <a-entity mixin="smalltitle" text="text: three.js (easy 3D)" position="0 -1.5 0.1" scale="0.8 0.8 0.8"></a-entity>
+            <a-box position="-2 -1.5 0.2" width="2" height="1" color="#FF4433"></a-box>
+            <a-entity mixin="smalltitle" text="text: webGL (rough 3D)" position="0.5 -2 0.1" scale="1 1 1"></a-entity>
+            <a-box position="-2 -2.0 0.4" width="3" height="1" color="#FFCC33"></a-box>
+      </a-entity>
+            <!-- Own PmWiki Aframe demo? -->
+    </a-entity>
+    <a-entity class="slide8" visible="false">
+      <a-entity mixin="smalltitle" text="text: VR UX tips"></a-entity>
+      <a-image src="https://ucarecdn.com/26918387-19cc-462f-9e76-abc052d7b7d9/"  position="-2 1 0.1" crossorigin="" width="3" height="2"></a-image>
+            <!-- http://vatelier.net/MyDemo/Previews/VisualDesignMethod.png -->
+      <a-curvedimage src="https://ucarecdn.com/dcffe8e9-1c79-4808-badd-4eadc59d6589/" radius="5.7" theta-length="32" height="3.02" rotation="0 140 0" scale="0.8 0.8 0.8" crossorigin="" position="1 0 6"> </a-curvedimage>
+      <a-curvedimage src="https://ucarecdn.com/c40475e8-f5df-4038-bd76-4a322580aca8/" radius="5.7" theta-length="32" height="3.02" rotation="0 -140 0" scale="0.8 0.8 0.8" crossorigin="" position="0 0 5"></a-curvedimage>
+      <a-image src="https://ucarecdn.com/ff49f76f-af06-4fab-96a9-4401cc0597da/"  position="-2 -1 0.1" crossorigin="">
+      <a-animation attribute="scale"
+               to="2 2 2"
+               dur="2000"
+               repeat="indefinite"></a-animation> 
+      </a-image> 
+    </a-entity>
+    <a-entity class="slide9" visible="false">
+      <a-entity mixin="smalltitle" text="text: conclusion"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Immersion remains the goal" position="-1 2 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Recycling DOM mastery" position="-1 1.5 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: JS fatigue & JS excitment : physics, PhantomJS, etc" position="-1 1 1"></a-entity>
+    </a-entity>
+    <a-entity class="slide10" visible="false">
+      <a-entity mixin="smalltitle" text="text: appendix slides, kept for Q&A"></a-entity>
+            <!--  Easter egg of my own 3D scan model -->
+            <!--  More demos including Pebble controller  -->
+            <!--  Edit in JSBin button! -->
+            <!--  cf text.. -->
+            <a-entity mixin="smalltitle" text="text: finding assets being texture, 3D models, sounds, etc" position="-1 2 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: shaders, what goes to the GPU(s) and what does not" position="-1 1.8 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: future of assets (360, 3Dscan, etc), webVR (gamepad API)" position="-1 1.6 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: future of webGL (Vulkan), web (webAssembly). etc" position="-1 1.4 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: more demos including Pebble controller" position="-1 1.2 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: let's Edit with the JSBin button!" position="-1 1.0 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Easter egg of my own 3D scan model" position="-1 0.8 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: ECS entity components system" position="-1 0.6 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Entity lifecycle (init, update, tick, remove)" position="-1 0.4 1"></a-entity>
+      <a-sky src="https://ucarecdn.com/7d9a9f60-1c5f-4c4e-b1ed-28c925295df3/" crossorigin="">
+    </a-entity> 
+    <a-entity class="slide11" visible="false">
+            <a-entity mixin="smalltitle" text="text: Thanks a lot for your attention" position="-1 2 10" rotation="0 70 0" scale="1 1 1"></a-entity>
+            <a-entity mixin="smalltitle" text="text: Fabien Benetou @Utopiah for CampusPartyNL" position="-2 0.5 10" rotation="0 70 0" scale="1 1 1"></a-entity> 
+            <!--  Dimmed light (doesn't work) -->
+    </a-entity> 
+             
+        <!-- http://fabien.benetou.fr/pub/home/slides_title_only.txt 
+              generated via script from
+                http://fabien.benetou.fr/WebVR/SlidesJSLabBrusselsMarch2016 -->
+    </a-scene>
+    
+    <script>
+      // cf https://aframe.io/docs/guide/building-a-basic-scene.html interacting with the box
+      
+      //should check first is the scene is loaded, cf https://aframe.io/docs/core/scene.html#Running-Content-Scripts-on-the-Scene
+
+      
+      var scene = document.querySelector('a-scene');
+
+      if (scene.hasLoaded) {
+        run();
+      } else {
+        scene.addEventListener('loaded', run);
+      }
+
+      function run () {
+        var item = document.getElementById('LookRight');
+        item.addEventListener('mouseenter', function() {
+          //console.log('LookRight object looked at');
+          scene.emit('keydown:ArrowRight');
+        });
+        var item = document.getElementById('LookLeft');
+        item.addEventListener('mouseenter', function() {
+          //console.log('LookLeft object looked at');
+          scene.emit('keydown:ArrowLeft');
+        });
+      }
+      
+    </script>
+  </body>
+</html>
